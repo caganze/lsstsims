@@ -29,7 +29,16 @@ import splat.empirical as spe
 import warnings
 warnings.filterwarnings("ignore")
 
-#SDSS 
+POL=(np.load('/users/caganze/research/popsimsdata/abs_mag_relations.npy', allow_pickle=True)).flatten()[0]
+print (POL['absmags_spt']['subdwarfs'].keys())
+print (POL['absmags_spt']['esd'].keys())
+
+#roman's metal poor models
+df_roman=pd.read_csv('/users/caganze/research/roman_new_isochrones.csv').rename(columns={'teff': 'temperature', 
+                                 'lum': 'luminosity'})
+
+METAL_POOR_EVOL= popsims.EvolutionaryModel(df_roman)
+
 SDSS={'FOV': 2.5*u.degree*2.5*u.degree,\
       'l':((np.array([0, 360]))*u.degree.to(u.radian)),\
             'b': ((np.array([-90, 90]))*u.degree.to(u.radian))}
@@ -44,9 +53,9 @@ ras0=np.nanmedian([dfl_conct['RAJ2000_VHS'].values, dfl_conct['RAJ2000_LAS'].val
 decs0=np.nanmedian([dfl_conct['DEJ2000_VHS'].values, dfl_conct['DEJ2000_LAS'].values], axis=0)
 
 #choose 100 random sightlines
-sights= np.random.choice(range(len(ras0)), 50)
+sights= np.random.choice(range(len(ras0)), 10)
 
-footprint=SkyCoord(ra=ras0*u.degree, dec=decs0*u.degree)
+footprint=SkyCoord(ra=ras0[sights]*u.degree, dec=decs0[sights]*u.degree)
 
 
 def compute_mags_from_reference(spt, mag_key, ref):
@@ -99,8 +108,15 @@ def simulate_survey(keys, maglimit, ps1=False):
     #dfs=[]
     
     #for dmax in [10, 50, 100, 500, 1000, 2000, 5_000, 10_000]:
-    dmax=3_000
-    nsample=5e6
+    #dmax=3_000 #only simulate up to a certain distances
+    nsample=1e3
+    dgrid=np.arange(10, 40)
+    dmaxs=np.empty(shape=(2, len (dgrid))).T
+    dmaxs[dgrid<17]=[0.1, 2000]
+    dmaxs[np.logical_and(dgrid>=17, dgrid<=19)]=[0.1, 500]
+    dmaxs[dgrid>19]=[0.1, 200]
+
+    drange=dict(zip(dgrid, dmaxs))
 
     p1=Population(evolmodel= 'burrows1997',
                   imf_power=-0.6,
@@ -111,13 +127,14 @@ def simulate_survey(keys, maglimit, ps1=False):
 
     p1.simulate()
 
-    p1.add_distances( Disk(H=300, L=2600), footprint.galactic.l.radian[sights],footprint.galactic.b.radian[sights], 0.1,  dmax, dsteps=1000)
+    #p1.add_distances( Disk(H=300, L=2600), footprint.galactic.l.radian[sights],footprint.galactic.b.radian[sights], 0.1,  dmax, dsteps=1000)
+    p1.assign_distance_from_spt_ranges(Disk(H=300, L=2600), footprint.galactic.l.radian, footprint.galactic.b.radian, drange)
 
     #add magnitudes from pre-defined filters or pre-define polynomial cofficients
     p1.add_magnitudes(keys, get_from='spt',object_type='dwarfs')
     p1.add_kinematics(footprint.ra.degree, footprint.dec.degree, kind='thin_disk', red_prop_motions_keys=keys)
 
-    p2=Population(evolmodel= 'burrows1997',
+    p2=Population(evolmodel= METAL_POOR_EVOL,
                   imf_power=-0.6,
                   binary_fraction=0.2,
                   age_range=[8, 14],
@@ -125,16 +142,18 @@ def simulate_survey(keys, maglimit, ps1=False):
                  nsample=nsample)
 
     p2.simulate()
+    print (len(p2.spt))
 
-    p2.add_distances( Disk(H=900, L=3600), footprint.galactic.l.radian[sights],footprint.galactic.b.radian[sights], 0.1,  dmax)
+    #p2.add_distances( Disk(H=900, L=3600), footprint.galactic.l.radian[sights],footprint.galactic.b.radian[sights], 0.1,  dmax)
+    p2.assign_distance_from_spt_ranges(Disk(H=900, L=3600), footprint.galactic.l.radian, footprint.galactic.b.radian, drange)
 
     #add magnitudes from pre-defined filters or pre-define polynomial cofficients
-    p2.add_magnitudes(keys, get_from='spt',object_type='dwarfs')
+    p2.add_magnitudes(keys, get_from='spt',object_type='subdwarfs', pol=POL['absmags_spt']['subdwarfs'])
     p2.add_kinematics(footprint.ra.degree, footprint.dec.degree, kind='thick_disk', red_prop_motions_keys=keys)
 
 
 
-    p3=Population(evolmodel= 'burrows1997',
+    p3=Population(evolmodel= METAL_POOR_EVOL,
                   imf_power=-0.6,
                   binary_fraction=0.2,
                   age_range=[10, 14],
@@ -143,11 +162,13 @@ def simulate_survey(keys, maglimit, ps1=False):
 
     p3.simulate()
 
-    p3.add_distances( Halo(), footprint.galactic.l.radian[sights],footprint.galactic.b.radian[sights], 0.1, dmax)
+    #p3.add_distances( Halo(), footprint.galactic.l.radian[sights],footprint.galactic.b.radian[sights], 0.1, dmax)
+    p3.assign_distance_from_spt_ranges(Halo(), footprint.galactic.l.radian, footprint.galactic.b.radian, drange)
+
 
 
     #add magnitudes from pre-defined filters or pre-define polynomial cofficients
-    p3.add_magnitudes(keys, get_from='spt',object_type='dwarfs')
+    p3.add_magnitudes(keys, get_from='spt',object_type='esd', pol=POL['absmags_spt']['esd'])
     p3.add_kinematics(footprint.ra.degree, footprint.dec.degree, kind='halo', red_prop_motions_keys=keys)
 
     p1.scale_to_local_lf()
@@ -155,8 +176,9 @@ def simulate_survey(keys, maglimit, ps1=False):
     p3.scale_to_local_lf()
 
     mag_cols= np.concatenate([['abs_'+x for x in keys], keys, ['redH_'+x for x in keys]])
-    cols=np.concatenate([mag_cols, ['spt', 'scale', 'mass', 'age', 'temperature', \
-                                    'scale_unc', 'scale_times_model', 'l', 'b','distance']])
+
+    cols=np.concatenate([mag_cols, ['spt', 'scale', 'mass', 'age', 'temperature',  'r', 'z', 'l', 'b', 'U', 'V', 'W', 'RV',\
+                                     'mu_alpha_cosdec', 'mu_delta', 'Vr', 'Vphi', 'Vz',  'scale_unc', 'scale_times_model', 'l', 'b','distance']])
 
     df1=p1.to_dataframe(cols)
     df1['population']='thin disk'
