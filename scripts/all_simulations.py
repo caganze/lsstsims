@@ -75,10 +75,10 @@ SURVEY_FOOTPRINT= {
        'Roman HLTDS':SkyCoord(*popsims.random_angles(10)*u.radian), #random
        'Roman GBTDS': SkyCoord(*popsims.random_angles(10)*u.radian), #random
        'Euclid Wide': SkyCoord(*popsims.random_angles(10)*u.radian), #random
-       'Rubin Deep': SkyCoord(*popsims.random_angles(1)*u.radian), #random
+       'Rubin Deep': SkyCoord(*popsims.random_angles(10)*u.radian), #random
        'Euclid Deep': SkyCoord(*popsims.random_angles(1)*u.radian), #random
        'JWST PASSAGE': SkyCoord(*popsims.random_angles(1)*u.radian), #random
-       'JWST JADES': SkyCoord(ra=53*u.degree, dec=-27.7*u.degree), #goods-sotu
+       'JWST JADES': SkyCoord(ra=[53]*u.degree, dec=[-27.7]*u.degree), #goods-sotu
        'JWST CEERS':  SkyCoord(*popsims.random_angles(1)*u.radian), #random
        'JWST NGDEEP':SkyCoord(*popsims.random_angles(1)*u.radian), #random
 }
@@ -92,7 +92,7 @@ FILTERS= {
        'Roman HLTDS':  ['WFI_'+x for x in 'R062 Z087 Y106 J129 H158 F184 Prism Grism'.split()],
        'Roman GBTDS': ['WFI_'+x for x in 'R062 Z087 Y106 J129 H158 F184 Prism Grism'.split()],
        'Euclid Wide': ['EUCLID_'+x for x in 'Y J H'.split()],
-       'Rubin Deep':  ['EUCLID_'+x for x in 'Y J H'.split()],
+       'Rubin Deep':  ['LSST_'+x for x in 'G R I Z Y'.split()],
        'Euclid Deep': ['EUCLID_'+x for x in 'Y J H'.split()],
        'JWST PASSAGE':  ['NIRISS_'+x for x in 'F115W F200W F150W'.split()], #CHANGE LATER
        'JWST JADES': ['NIRISS_'+x for x in 'F115W F200W F150W'.split()],
@@ -117,7 +117,7 @@ FILENAMES={
 }
 
 
-def get_maximum_volumes(spt, kind, maglimits):
+def get_maximum_distances(spt, kind, maglimits):
     #for all the filters, compute the largest volume and draw distances from that
     dmaxs=[]
     for k in maglimits.keys():
@@ -126,14 +126,22 @@ def get_maximum_volumes(spt, kind, maglimits):
             dmaxs.append(10.**(-(absmag-mag_cut)/5. + 1.))
     return np.nanmax(dmaxs)
 
+def get_volume(footprint, dmax, gmodel):
+    vol=0.
+    for s in  footprint:
+        l=s.galactic.l.radian
+        b=s.galactic.b.radian
+        vol += gmodel.volume(l, b, 0.1, dmax)
+    return vol
+
 def simulate_survey(keys, maglimit, footprint, filename):
 
     nsample=1e3
     sptgrid=np.arange(15, 40)
     dminss=0.1*np.ones_like(sptgrid)
-    dmaxss=1.5*np.array([get_maximum_volumes(x, 'dwarfs', maglimit) for x  in sptgrid])
-    dmaxss_sd=1.5*np.array([get_maximum_volumes(x, 'subdwarfs', maglimit) for x in sptgrid])
-    dmaxss_esd=1.5*np.array([get_maximum_volumes(x,'esd', maglimit) for x in sptgrid])
+    dmaxss=1.5*np.array([get_maximum_distances(x, 'dwarfs', maglimit) for x  in sptgrid])
+    dmaxss_sd=1.5*np.array([get_maximum_distances(x, 'subdwarfs', maglimit) for x in sptgrid])
+    dmaxss_esd=1.5*np.array([get_maximum_distances(x,'esd', maglimit) for x in sptgrid])
 
     drange=dict(zip(sptgrid,np.vstack([dminss, dmaxss]).T ))
 
@@ -207,11 +215,27 @@ def simulate_survey(keys, maglimit, footprint, filename):
 
     df=pd.concat([df1, df2, df3]).reset_index(drop=True)
 
+    #print (df1.columns)
+    #print (df2.columns)
+    #print (df3.columns)
+
     df=df[np.logical_and.reduce([df[k] <  maglimit[k] for k in maglimit.keys() ])].reset_index(drop=True)
-        
 
-    np.save('../simulations{}.npy'.format(filename), df, allow_pickle=True) 
+    thind_vols=[get_volume(footprint, x , Disk(H=300, L=2600)) for x in dmaxss]
+    thickd_vols=[get_volume(footprint, x , Disk(H=900, L=3600)) for x in dmaxss]
+    halo_vols=[get_volume(footprint, x , Halo()) for x in dmaxss]
+                 
+    res={'data': df,
+         'nsample': nsample,
+         'volume': {'thin_disk':  thind_vols, 'thick_disk': thickd_vols, 'halo': halo_vols }, #note that solid angle not considered here
+         'footprint': footprint,
+         'mag_limits':maglimit,
+         'sptgrid': sptgrid
+    }
+
+    np.save('../simulations{}.npy'.format(filename), res, allow_pickle=True) 
 
 
-survey='Rubin Wide'
-simulate_survey(FILTERS[survey], SURVEY_DEPTHS[survey], SURVEY_FOOTPRINT[survey], FILENAMES[survey])
+#survey='Rubin Wide'
+for survey in FILTERS.keys():
+     simulate_survey(FILTERS[survey], SURVEY_DEPTHS[survey], SURVEY_FOOTPRINT[survey], FILENAMES[survey])
