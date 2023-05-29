@@ -109,7 +109,7 @@ def simulate_survey(keys, maglimit, ps1=False):
     
     #for dmax in [10, 50, 100, 500, 1000, 2000, 5_000, 10_000]:
     #dmax=3_000 #only simulate up to a certain distances
-    nsample=1e3
+    nsample=1e6
     dgrid=np.arange(10, 40)
     dmaxs=np.empty(shape=(2, len (dgrid))).T
     dmaxs[dgrid<17]=[0.1, 2000]
