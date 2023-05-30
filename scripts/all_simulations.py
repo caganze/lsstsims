@@ -55,7 +55,7 @@ SURVEY_AREAS= {
 }
 
 SURVEY_DEPTHS= {
-       'Rubin Wide': {'LSST_G': 25.}, 
+       'Rubin Wide': {'LSST_G': 25., 'LSST_R': 24.7, 'LSST_I': 24.0, 'LSST_Z': 23.3, 'LSST_Y': 22.1}, 
        'Roman HLWAS': {'WFI_J129': 26.7},
        'Roman HLTDS': {'WFI_J129': 26.7},
        'Roman GBTDS': {'WFI_J129': 26.7},
@@ -70,17 +70,17 @@ SURVEY_DEPTHS= {
 
 #check the right pointings later
 SURVEY_FOOTPRINT= {
-       'Rubin Wide': SkyCoord(*popsims.random_angles(10)*u.radian), #random
-       'Roman HLWAS': SkyCoord(*popsims.random_angles(10)*u.radian), #random
-       'Roman HLTDS':SkyCoord(*popsims.random_angles(10)*u.radian), #random
-       'Roman GBTDS': SkyCoord(*popsims.random_angles(10)*u.radian), #random
-       'Euclid Wide': SkyCoord(*popsims.random_angles(10)*u.radian), #random
-       'Rubin Deep': SkyCoord(*popsims.random_angles(10)*u.radian), #random
-       'Euclid Deep': SkyCoord(*popsims.random_angles(1)*u.radian), #random
-       'JWST PASSAGE': SkyCoord(*popsims.random_angles(1)*u.radian), #random
+       'Rubin Wide': SkyCoord(*popsims.random_angles(100)*u.radian), #random
+       'Roman HLWAS': SkyCoord(*popsims.random_angles(100)*u.radian), #random
+       'Roman HLTDS':SkyCoord(*popsims.random_angles(100)*u.radian), #random
+       'Roman GBTDS': SkyCoord(*popsims.random_angles(100)*u.radian), #random
+       'Euclid Wide': SkyCoord(*popsims.random_angles(100)*u.radian), #random
+       'Rubin Deep': SkyCoord(*popsims.random_angles(100)*u.radian), #random
+       'Euclid Deep': SkyCoord(*popsims.random_angles(10)*u.radian), #random
+       'JWST PASSAGE': SkyCoord(*popsims.random_angles(10)*u.radian), #random
        'JWST JADES': SkyCoord(ra=[53]*u.degree, dec=[-27.7]*u.degree), #goods-sotu
-       'JWST CEERS':  SkyCoord(*popsims.random_angles(1)*u.radian), #random
-       'JWST NGDEEP':SkyCoord(*popsims.random_angles(1)*u.radian), #random
+       'JWST CEERS':  SkyCoord(*popsims.random_angles(10)*u.radian), #random
+       'JWST NGDEEP':SkyCoord(*popsims.random_angles(10)*u.radian), #random
 }
 
 
@@ -136,8 +136,8 @@ def get_volume(footprint, dmax, gmodel):
 
 def simulate_survey(keys, maglimit, footprint, filename):
 
-    nsample=1e3
-    sptgrid=np.arange(15, 40)
+    nsample=1e4
+    sptgrid=np.arange(14, 40)
     dminss=0.1*np.ones_like(sptgrid)
     dmaxss=1.5*np.array([get_maximum_distances(x, 'dwarfs', maglimit) for x  in sptgrid])
     dmaxss_sd=1.5*np.array([get_maximum_distances(x, 'subdwarfs', maglimit) for x in sptgrid])
@@ -206,12 +206,15 @@ def simulate_survey(keys, maglimit, footprint, filename):
 
     df1=p1.to_dataframe(cols)
     df1['population']='thin disk'
+    df1['FeH']=0.
 
     df2=p2.to_dataframe(cols)
     df2['population']='thick disk'
+    df1['FeH']=-0.5
 
     df3=p3.to_dataframe(cols)
     df3['population']='halo'
+    df1['FeH']=-1.5
 
     df=pd.concat([df1, df2, df3]).reset_index(drop=True)
 
@@ -232,7 +235,7 @@ def simulate_survey(keys, maglimit, footprint, filename):
          'mag_limits':maglimit,
          'sptgrid': sptgrid
     }
-
+    #add an option to add data until we reach desired nsample (after cuts)
     np.save('../simulations{}.npy'.format(filename), res, allow_pickle=True) 
 
 
