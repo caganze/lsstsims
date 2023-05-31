@@ -243,7 +243,7 @@ def simulate_survey(keys, maglimit, footprint, filename):
     #selection function by pointing!!!
     res={'data': df,
          'nsample': nsample,
-         'volume': {'thin_disk':  thind_vols, 'thick_disk': thickd_vols, 'halo': halo_vols }, #note that solid angle not considered here
+         'volume': {'thin disk':  thind_vols, 'thick disk': thickd_vols, 'halo': halo_vols }, #note that solid angle not considered here
          'footprint': footprint,
          'mag_limits':maglimit,
          'sptgrid': sptgrid
