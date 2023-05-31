@@ -44,7 +44,8 @@ def random_points_above_latitute(n, bmin):
     mask= np.abs(b)>bmin
     l= l[mask][:n]
     b= b[mask][:n]
-    return l, b
+    s=SkyCoord(l=l*u.radian, b=b*u.radian, frame=Galactic)
+    return s
 
 SURVEY_AREAS= {
        'Rubin Wide': 18_000*u.degree**2, 
@@ -76,12 +77,12 @@ SURVEY_DEPTHS= {
 
 #check the right pointings later
 SURVEY_FOOTPRINT= {
-       'Rubin Wide': SkyCoord(*random_points_above_latitute(100, 20*u.degree.to(u.radian))*u.radian),
-       'Roman HLWAS':SkyCoord(*random_points_above_latitute(100, 20*u.degree.to(u.radian))*u.radian),
-       'Roman HLTDS':SkyCoord(*random_points_above_latitute(100, 36*u.degree.to(u.radian))*u.radian), #random
+       'Rubin Wide': random_points_above_latitute(100, 20*u.degree.to(u.radian)),
+       'Roman HLWAS':random_points_above_latitute(100, 20*u.degree.to(u.radian)),
+       'Roman HLTDS':random_points_above_latitute(100, 20*u.degree.to(u.radian)), #random
        #'Roman GBTDS': SkyCoord(*popsims.random_angles(100)*u.radian), #random
-       'Euclid Wide': SkyCoord(*random_points_above_latitute(100, 20*u.degree.to(u.radian))*u.radian),
-       'Rubin 10 year': SkyCoord(*random_points_above_latitute(100, 20*u.degree.to(u.radian))*u.radian),
+       'Euclid Wide': random_points_above_latitute(100, 20*u.degree.to(u.radian)),
+       'Rubin 10 year': random_points_above_latitute(100, 20*u.degree.to(u.radian)),
        'Euclid Deep': SkyCoord(ra=[189.22]*u.degree, dec=[62.2375]*u.degree), #GOODS-NORTH (189.22, 62.2375
        #'JWST PASSAGE': SkyCoord(*popsims.random_angles(10)*u.radian), #random
        #'JWST JADES': SkyCoord(ra=[53]*u.degree, dec=[-27.7]*u.degree), #goods-sotu
@@ -96,7 +97,7 @@ SURVEY_FOOTPRINT= {
 FILTERS= {
        'Rubin Wide':  ['LSST_'+x for x in 'G R I Z Y'.split()],
        'Roman HLWAS':  ['WFI_'+x for x in 'R062 Z087 Y106 J129 H158 F184 Prism Grism'.split()],
-       #'Roman HLTDS':  ['WFI_'+x for x in 'R062 Z087 Y106 J129 H158 F184 Prism Grism'.split()],
+       'Roman HLTDS':  ['WFI_'+x for x in 'R062 Z087 Y106 J129 H158 F184 Prism Grism'.split()],
        #'Roman GBTDS': ['WFI_'+x for x in 'R062 Z087 Y106 J129 H158 F184 Prism Grism'.split()],
        'Euclid Wide': ['EUCLID_'+x for x in 'Y J H'.split()],
        'Rubin 10 year':  ['LSST_'+x for x in 'G R I Z Y'.split()],
@@ -150,7 +151,7 @@ def get_pointing(lb):
 
 def simulate_survey(keys, maglimit, footprint, filename, Hthin=300, haloIMF=-0.6):
 
-    nsample=1e6
+    nsample=1e3
     sptgrid=np.arange(14, 40)
     dminss=0.1*np.ones_like(sptgrid)
     dmaxss=1.2*np.array([get_maximum_distances(x, 'dwarfs', maglimit) for x  in sptgrid])
@@ -256,13 +257,13 @@ def simulate_survey(keys, maglimit, footprint, filename, Hthin=300, haloIMF=-0.6
 
 
 #survey nominal
-for survey in FILTERS.keys():
+for survey in ['Euclid Wide', 'Euclid Deep']:
      simulate_survey(FILTERS[survey], SURVEY_DEPTHS[survey], SURVEY_FOOTPRINT[survey], FILENAMES[survey])
 
 #vary scaleheights
-survey='Rubin Wide'
-for h in [100, 200, 300, 400]:
-    simulate_survey(FILTERS[survey], SURVEY_DEPTHS[survey], SURVEY_FOOTPRINT[survey], 'rubin_widethin{}'.format(h),  Hthin=h)
+#survey='Rubin Wide'
+#for h in [100, 200, 300, 400]:
+#    simulate_survey(FILTERS[survey], SURVEY_DEPTHS[survey], SURVEY_FOOTPRINT[survey], 'rubin_widethin{}'.format(h),  Hthin=h)
 
-for imf in [2.3, -2.3, 0.0]:
-    simulate_survey(FILTERS[survey], SURVEY_DEPTHS[survey], SURVEY_FOOTPRINT[survey], 'rubin_widehalo{}'.format(imf),   haloIMF=imf)
+#for imf in [2.3, -2.3, 0.0]:
+#    simulate_survey(FILTERS[survey], SURVEY_DEPTHS[survey], SURVEY_FOOTPRINT[survey], 'rubin_widehalo{}'.format(imf),   haloIMF=imf)
