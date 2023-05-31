@@ -149,7 +149,7 @@ def get_pointing(lb):
 
 def simulate_survey(keys, maglimit, footprint, filename):
 
-    nsample=1e3
+    nsample=1e5
     sptgrid=np.arange(14, 40)
     dminss=0.1*np.ones_like(sptgrid)
     dmaxss=1.2*np.array([get_maximum_distances(x, 'dwarfs', maglimit) for x  in sptgrid])
@@ -239,7 +239,7 @@ def simulate_survey(keys, maglimit, footprint, filename):
     thind_vols=[get_volume(footprint, x , Disk(H=300, L=2600)) for x in dmaxss]
     thickd_vols=[get_volume(footprint, x , Disk(H=900, L=3600)) for x in dmaxss]
     halo_vols=[get_volume(footprint, x , Halo()) for x in dmaxss]
-                 
+
     #selection function by pointing!!!
     res={'data': df,
          'nsample': nsample,
