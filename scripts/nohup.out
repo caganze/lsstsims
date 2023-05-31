@@ -80,3 +80,72 @@ dict_keys(['SDSS_G', 'SDSS_R', 'SDSS_I', 'SDSS_Z', 'PANSTARRS_R', 'PANSTARRS_I',
 1000000
 1000000
 1000000
+
+
+Welcome to the Spex Prism Library Analysis Toolkit (SPLAT)!
+If you make use of any features of this toolkit for your research, please remember to cite the SPLAT paper:
+
+Burgasser et al. (2017, Astro. Soc. India Conf. Series 14, p. 7); Bibcode: 2017ASInC..14....7B
+
+If you make use of any spectra or models in this toolkit, please remember to cite the original source.
+Please report any errors are feature requests to our github page, https://github.com/aburgasser/splat/
+
+
+dict_keys(['LSST_R', 'LSST_I', 'LSST_Z', 'SDSS_G', 'SDSS_R', 'SDSS_I', 'SDSS_Z', 'PANSTARRS_R', 'PANSTARRS_I', 'PANSTARRS_Z', 'PANSTARRS_Y', 'LSST_G', 'LSST_Y', 'VISTA_Z', 'VISTA_Y', 'VISTA_J', 'VISTA_H', 'VISTA_KS', 'UKIDSS_J', 'UKIDSS_H', 'UKIDSS_K', '2MASS J', '2MASS H', '2MASS K', 'UKIDSS_Y', 'NIRISS_F115W', 'NIRISS_F200W', 'NIRISS_F150W', 'WFI_R062', 'WFI_Z087', 'WFI_Y106', 'WFI_J129', 'WFI_H158', 'WFI_F184', 'WFI_Prism', 'WFI_Grism', 'EUCLID_Y', 'EUCLID_J', 'EUCLID_H'])
+dict_keys(['SDSS_G', 'SDSS_R', 'SDSS_I', 'SDSS_Z', 'PANSTARRS_R', 'PANSTARRS_I', 'PANSTARRS_Z', 'PANSTARRS_Y', 'LSST_G', 'LSST_R', 'LSST_I', 'LSST_Z', 'LSST_Y', 'VISTA_Z', 'VISTA_Y', 'VISTA_J', 'VISTA_H', 'VISTA_KS', 'UKIDSS_Y', 'UKIDSS_J', 'UKIDSS_H', 'UKIDSS_K', '2MASS J', '2MASS H', '2MASS K', 'NIRISS_F115W', 'NIRISS_F200W', 'NIRISS_F150W', 'WFI_R062', 'WFI_Z087', 'WFI_Y106', 'WFI_J129', 'WFI_H158', 'WFI_F184', 'WFI_Prism', 'WFI_Grism', 'EUCLID_Y', 'EUCLID_J', 'EUCLID_H'])
+Traceback (most recent call last):
+  File "/Users/caganze/research/lsstsims/scripts/all_simulations.py", line 257, in <module>
+    simulate_survey(FILTERS[survey], SURVEY_DEPTHS[survey], SURVEY_FOOTPRINT[survey], FILENAMES[survey])
+  File "/Users/caganze/research/lsstsims/scripts/all_simulations.py", line 183, in simulate_survey
+    p2.simulate()
+  File "/Users/caganze/opt/anaconda3/lib/python3.9/site-packages/popsims/simulator.py", line 176, in simulate
+    vals= make_systems(values, self.binaryfraction).sample(n=int(self.nsample)).to_dict(orient='list')
+  File "/Users/caganze/opt/anaconda3/lib/python3.9/site-packages/popsims/simulator.py", line 411, in make_systems
+    binaries = create_binaries(mods)
+  File "/Users/caganze/opt/anaconda3/lib/python3.9/site-packages/popsims/simulator.py", line 403, in create_binaries
+    binaries['temperature'] = teff_func(binaries['spt'])
+  File "/Users/caganze/opt/anaconda3/lib/python3.9/site-packages/numpy/lib/function_base.py", line 2163, in __call__
+    return self._vectorize_call(func=func, args=vargs)
+  File "/Users/caganze/opt/anaconda3/lib/python3.9/site-packages/numpy/lib/function_base.py", line 2246, in _vectorize_call
+    outputs = ufunc(*inputs)
+  File "/Users/caganze/opt/anaconda3/lib/python3.9/site-packages/popsims/simulator.py", line 402, in <lambda>
+    teff_func = np.vectorize(lambda spt: spt_to_teff_kirkpatrick(spt)[0] if spt > 20 else spt_to_teff_pecaut(spt))
+  File "/Users/caganze/opt/anaconda3/lib/python3.9/site-packages/popsims/relations.py", line 142, in spt_to_teff_kirkpatrick
+    return apply_polynomial_relation(LITERATURE_POLYNOMIALS['kirkpatrick2021']['x=spt,y=teff'], spt)
+  File "/Users/caganze/opt/anaconda3/lib/python3.9/site-packages/popsims/core_tools.py", line 380, in apply_polynomial_relation
+    return np.nanmedian(res.flatten()), np.nanstd(res.flatten())
+  File "<__array_function__ internals>", line 5, in nanstd
+  File "/Users/caganze/opt/anaconda3/lib/python3.9/site-packages/numpy/lib/nanfunctions.py", line 1670, in nanstd
+    var = nanvar(a, axis=axis, dtype=dtype, out=out, ddof=ddof,
+  File "<__array_function__ internals>", line 5, in nanvar
+  File "/Users/caganze/opt/anaconda3/lib/python3.9/site-packages/numpy/lib/nanfunctions.py", line 1518, in nanvar
+    arr, mask = _replace_nan(a, 0)
+  File "/Users/caganze/opt/anaconda3/lib/python3.9/site-packages/numpy/lib/nanfunctions.py", line 108, in _replace_nan
+    np.copyto(a, val, where=mask)
+  File "<__array_function__ internals>", line 2, in copyto
+KeyboardInterrupt
+
+
+Welcome to the Spex Prism Library Analysis Toolkit (SPLAT)!
+If you make use of any features of this toolkit for your research, please remember to cite the SPLAT paper:
+
+Burgasser et al. (2017, Astro. Soc. India Conf. Series 14, p. 7); Bibcode: 2017ASInC..14....7B
+
+If you make use of any spectra or models in this toolkit, please remember to cite the original source.
+Please report any errors are feature requests to our github page, https://github.com/aburgasser/splat/
+
+
+dict_keys(['LSST_R', 'LSST_I', 'LSST_Z', 'SDSS_G', 'SDSS_R', 'SDSS_I', 'SDSS_Z', 'PANSTARRS_R', 'PANSTARRS_I', 'PANSTARRS_Z', 'PANSTARRS_Y', 'LSST_G', 'LSST_Y', 'VISTA_Z', 'VISTA_Y', 'VISTA_J', 'VISTA_H', 'VISTA_KS', 'UKIDSS_J', 'UKIDSS_H', 'UKIDSS_K', '2MASS J', '2MASS H', '2MASS K', 'UKIDSS_Y', 'NIRISS_F115W', 'NIRISS_F200W', 'NIRISS_F150W', 'WFI_R062', 'WFI_Z087', 'WFI_Y106', 'WFI_J129', 'WFI_H158', 'WFI_F184', 'WFI_Prism', 'WFI_Grism', 'EUCLID_Y', 'EUCLID_J', 'EUCLID_H'])
+dict_keys(['SDSS_G', 'SDSS_R', 'SDSS_I', 'SDSS_Z', 'PANSTARRS_R', 'PANSTARRS_I', 'PANSTARRS_Z', 'PANSTARRS_Y', 'LSST_G', 'LSST_R', 'LSST_I', 'LSST_Z', 'LSST_Y', 'VISTA_Z', 'VISTA_Y', 'VISTA_J', 'VISTA_H', 'VISTA_KS', 'UKIDSS_Y', 'UKIDSS_J', 'UKIDSS_H', 'UKIDSS_K', '2MASS J', '2MASS H', '2MASS K', 'NIRISS_F115W', 'NIRISS_F200W', 'NIRISS_F150W', 'WFI_R062', 'WFI_Z087', 'WFI_Y106', 'WFI_J129', 'WFI_H158', 'WFI_F184', 'WFI_Prism', 'WFI_Grism', 'EUCLID_Y', 'EUCLID_J', 'EUCLID_H'])
+1000000
+1000000
+1000000
+1000000
+1000000
+1000000
+1000000
+1000000
+1000000
+1000000
+1000000
+1000000

@@ -76,15 +76,16 @@ SURVEY_DEPTHS= {
 
 #check the right pointings later
 SURVEY_FOOTPRINT= {
-       'Rubin Wide': SkyCoord(*popsims.random_angles(100)*u.radian), #random
-       'Roman HLWAS': SkyCoord(*popsims.random_angles(100)*u.radian), #random
+       'Rubin Wide': SkyCoord(*random_points_above_latitute(100, 20*u.degree.to(u.radian))*u.radian),
+       'Roman HLWAS':SkyCoord(*random_points_above_latitute(100, 20*u.degree.to(u.radian))*u.radian),
        'Roman HLTDS':SkyCoord(*random_points_above_latitute(100, 36*u.degree.to(u.radian))*u.radian), #random
        #'Roman GBTDS': SkyCoord(*popsims.random_angles(100)*u.radian), #random
-       'Euclid Wide': SkyCoord(*popsims.random_angles(100)*u.radian), #random
-       'Rubin 10 year': SkyCoord(*popsims.random_angles(100)*u.radian), #random
-       'Euclid Deep': SkyCoord(*popsims.random_angles(10)*u.radian), #random
+       'Euclid Wide': SkyCoord(*random_points_above_latitute(100, 20*u.degree.to(u.radian))*u.radian),
+       'Rubin 10 year': SkyCoord(*random_points_above_latitute(100, 20*u.degree.to(u.radian))*u.radian),
+       'Euclid Deep': SkyCoord(ra=[189.22]*u.degree, dec=[62.2375]*u.degree), #GOODS-NORTH (189.22, 62.2375
        #'JWST PASSAGE': SkyCoord(*popsims.random_angles(10)*u.radian), #random
        #'JWST JADES': SkyCoord(ra=[53]*u.degree, dec=[-27.7]*u.degree), #goods-sotu
+       
        #'JWST CEERS':  SkyCoord(*popsims.random_angles(10)*u.radian), #random
        #'JWST NGDEEP':SkyCoord(*popsims.random_angles(10)*u.radian), #random
 }
@@ -147,9 +148,9 @@ def get_pointing(lb):
     l, b=lb*u.radian
     return hash((round(l.to(u.degree).value, 1), round(b.to(u.degree).value, 1)))
 
-def simulate_survey(keys, maglimit, footprint, filename):
+def simulate_survey(keys, maglimit, footprint, filename, Hthin=300, haloIMF=-0.6):
 
-    nsample=1e5
+    nsample=1e6
     sptgrid=np.arange(14, 40)
     dminss=0.1*np.ones_like(sptgrid)
     dmaxss=1.2*np.array([get_maximum_distances(x, 'dwarfs', maglimit) for x  in sptgrid])
@@ -167,7 +168,7 @@ def simulate_survey(keys, maglimit, footprint, filename):
 
     p1.simulate()
 
-    p1.assign_distance_from_spt_ranges(Disk(H=300, L=2600), footprint.galactic.l.radian, footprint.galactic.b.radian, drange)
+    p1.assign_distance_from_spt_ranges(Disk(H=Hthin, L=2600), footprint.galactic.l.radian, footprint.galactic.b.radian, drange)
 
     #add magnitudes from pre-defined filters or pre-define polynomial cofficients
     p1.add_magnitudes(keys, get_from='spt',object_type='dwarfs')
@@ -193,7 +194,7 @@ def simulate_survey(keys, maglimit, footprint, filename):
 
 
     p3=Population(evolmodel= METAL_POOR_EVOL,
-                  imf_power=-0.6,
+                  imf_power=haloIMF,
                   binary_fraction=0.2,
                   age_range=[10, 14],
                   mass_range=[0.01, .1],
@@ -246,12 +247,22 @@ def simulate_survey(keys, maglimit, footprint, filename):
          'volume': {'thin disk':  thind_vols, 'thick disk': thickd_vols, 'halo': halo_vols }, #note that solid angle not considered here
          'footprint': footprint,
          'mag_limits':maglimit,
-         'sptgrid': sptgrid
+         'sptgrid': sptgrid,
+         'Hthin': Hthin, 
+         'haloIMF':haloIMF,
     }
     #add an option to add data until we reach desired nsample (after cuts)
     np.save('../simulations{}.npy'.format(filename), res, allow_pickle=True) 
 
 
-#survey='Rubin Wide'
+#survey nominal
 for survey in FILTERS.keys():
      simulate_survey(FILTERS[survey], SURVEY_DEPTHS[survey], SURVEY_FOOTPRINT[survey], FILENAMES[survey])
+
+#vary scaleheights
+survey='Rubin Wide'
+for h in [100, 200, 300, 400]:
+    simulate_survey(FILTERS[survey], SURVEY_DEPTHS[survey], SURVEY_FOOTPRINT[survey], 'rubin_widethin{}'.format(h),  Hthin=h)
+
+for imf in [2.3, -2.3, 0.0]:
+    simulate_survey(FILTERS[survey], SURVEY_DEPTHS[survey], SURVEY_FOOTPRINT[survey], 'rubin_widehalo{}'.format(imf),   haloIMF=imf)
