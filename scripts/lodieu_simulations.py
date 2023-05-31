@@ -55,7 +55,16 @@ decs0=np.nanmedian([dfl_conct['DEJ2000_VHS'].values, dfl_conct['DEJ2000_LAS'].va
 #choose 100 random sightlines
 sights= np.random.choice(range(len(ras0)), 10)
 
-footprint=SkyCoord(ra=ras0[sights]*u.degree, dec=decs0[sights]*u.degree)
+#footprint=SkyCoord(ra=ras0[sights]*u.degree, dec=decs0[sights]*u.degree)
+#look at random pointings
+from astropy.io import ascii
+t1=ascii.read('/users/caganze/ukidss_sdss_crossmatch.csv').to_pandas()
+t2=ascii.read('/users/caganze/vhs_sdss_crossmatch.csv').to_pandas()
+t3=ascii.read('/users/caganze/vhs_ps1_crossmatch.csv').to_pandas()
+
+footprint_ukidss=SkyCoord(t1.RA*u.degree, t1.Dec*u.degree)
+footprint_vhs= SkyCoord(t2.RA*u.degree, t2.Dec*u.degree)
+footprint_ps1=SkyCoord(t3.RA*u.degree, t3.Dec*u.degree)
 
 
 def compute_mags_from_reference(spt, mag_key, ref):
@@ -92,7 +101,25 @@ def get_ps1_mags(df):
         
     return df
 
-def simulate_survey(keys, maglimit, ps1=False):
+def get_maximum_distances(spt, kind, maglimits):
+    #for all the filters, compute the largest volume and draw distances from that
+    dmaxs=[]
+    for k in maglimits.keys():
+            mag_cut= maglimits[k]
+            absmag= np.poly1d(POL['absmags_spt'][kind][k]['fit'])(spt)
+            dmaxs.append(10.**(-(absmag-mag_cut)/5. + 1.))
+    return np.nanmax(dmaxs)
+
+def get_volume(footprint, dmax, gmodel):
+    vol=0.
+    for s in  footprint:
+        l=s.galactic.l.radian
+        b=s.galactic.b.radian
+        vol += gmodel.volume(l, b, 0.1, dmax)
+    return vol
+
+
+def simulate_survey(keys, maglimit, footprint, ps1=False):
     #use the brighest magnitude cut
     #k= [k for k in maglimit.keys()][0]
     #absmag= np.poly1d(popsims.simulator.POLYNOMIALS['absmags_spt']['dwarfs'][k]['fit'])(15)
@@ -109,14 +136,19 @@ def simulate_survey(keys, maglimit, ps1=False):
     
     #for dmax in [10, 50, 100, 500, 1000, 2000, 5_000, 10_000]:
     #dmax=3_000 #only simulate up to a certain distances
-    nsample=1e6
-    dgrid=np.arange(10, 40)
-    dmaxs=np.empty(shape=(2, len (dgrid))).T
-    dmaxs[dgrid<17]=[0.1, 2000]
-    dmaxs[np.logical_and(dgrid>=17, dgrid<=19)]=[0.1, 500]
-    dmaxs[dgrid>19]=[0.1, 200]
-
-    drange=dict(zip(dgrid, dmaxs))
+    nsample=1e3
+    #dgrid=np.arange(10, 40)
+    #dmaxs=np.empty(shape=(2, len (dgrid))).T
+    #dmaxs[dgrid<17]=[0.1, 2000]
+    #dmaxs[np.logical_and(dgrid>=17, dgrid<=19)]=[0.1, 500]
+    #dmaxs[dgrid>19]=[0.1, 200]
+    sptgrid=np.arange(14, 40)
+    dminss=0.1*np.ones_like(sptgrid)
+    dmaxss=1.5*np.array([get_maximum_distances(x, 'dwarfs', maglimit) for x  in sptgrid])
+    dmaxss_sd=1.5*np.array([get_maximum_distances(x, 'subdwarfs', maglimit) for x in sptgrid])
+    dmaxss_esd=1.5*np.array([get_maximum_distances(x,'esd', maglimit) for x in sptgrid])
+    drange=dict(zip(sptgrid,np.vstack([dminss, dmaxss]).T ))
+    #drange=dict(zip(dgrid, dmaxs))
 
     p1=Population(evolmodel= 'burrows1997',
                   imf_power=-0.6,
@@ -202,24 +234,37 @@ def simulate_survey(keys, maglimit, ps1=False):
     #dfs.append(df)
 
     #return pd.concat(dfs)
-    return df
+
+    thind_vols=[get_volume(footprint, x , Disk(H=300, L=2600)) for x in dmaxss]
+    thickd_vols=[get_volume(footprint, x , Disk(H=900, L=3600)) for x in dmaxss]
+    halo_vols=[get_volume(footprint, x , Halo()) for x in dmaxss]
+                 
+    res={'data': df,
+         'nsample': nsample,
+         'volume': {'thin_disk':  thind_vols, 'thick_disk': thickd_vols, 'halo': halo_vols }, #note that solid angle not considered here
+         'footprint': footprint,
+         'mag_limits':maglimit,
+         'sptgrid': sptgrid
+    }
+    #add an option to add data until we reach desired nsample (after cuts)
+    return res
     
     
 #run a combined ukidss-sdss 
 ukidss_sdss= simulate_survey(['SDSS_G', 'SDSS_R','SDSS_I', 'SDSS_Z', 
                              'UKIDSS_Y', 'UKIDSS_J', 'UKIDSS_H', 'UKIDSS_K'], \
-                             {'UKIDSS_Y': 20.3, 'UKIDSS_J': 19.9})
+                             {'UKIDSS_Y': 20.3, 'UKIDSS_J': 19.9}, footprint_ukidss)
 #Y=20.3,J=19.9,H=18.6,K=18.2
 #G=23.15
 
 #run a combined ukidss-sdss 
 vhs_sdss= simulate_survey(['SDSS_G', 'SDSS_R','SDSS_I', 'SDSS_Z', 
                              'VISTA_Y', 'VISTA_J', 'VISTA_H', 'VISTA_KS'], \
-                             {'SDSS_G': 23.15})
+                             {'SDSS_G': 23.15}, footprint_vhs)
 #vhs panstars
 
 vhs_ps=  simulate_survey(['VISTA_Y', 'VISTA_J', 'VISTA_H', 'VISTA_KS'], \
-                             {'VISTA_J': 19.5})
+                             {'VISTA_J': 19.5}, footprint_ps1)
 
 #save data
 res={'ukidss_sdss': ukidss_sdss, 'vhs_sdss': vhs_sdss, 'vhs_ps': vhs_ps }

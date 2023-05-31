@@ -39,48 +39,54 @@ df_roman=pd.read_csv('/users/caganze/research/roman_new_isochrones.csv').rename(
 
 METAL_POOR_EVOL= popsims.EvolutionaryModel(df_roman)
 
+def random_points_above_latitute(n, bmin):
+    l, b=popsims.random_angles(10*n)
+    mask= np.abs(b)>bmin
+    l= l[mask][:n]
+    b= b[mask][:n]
+    return l, b
 
 SURVEY_AREAS= {
        'Rubin Wide': 18_000*u.degree**2, 
        'Roman HLWAS': 2_000*u.degree**2,
        'Roman HLTDS': 20*u.degree**2 ,
-       'Roman GBTDS': 2*u.degree**2,
+       #'Roman GBTDS': 2*u.degree**2,
        'Euclid Wide': 15_000*u.degree**2,
-       'Rubin Deep': 18_000*u.degree**2, 
+       'Rubin 10 year': 18_000*u.degree**2, 
        'Euclid Deep': 40*u.degree**2,
-       'JWST PASSAGE': 124*4*u.arcmin**2,
-       'JWST JADES': 65*u.arcmin**2,
-       'JWST CEERS': 100*u.arcmin**2,
-       'JWST NGDEEP': 10*u.arcmin**2,
+       #'JWST PASSAGE': 124*4*u.arcmin**2,
+       #'JWST JADES': 65*u.arcmin**2,
+       #'JWST CEERS': 100*u.arcmin**2,
+       #'JWST NGDEEP': 10*u.arcmin**2,
 }
 
 SURVEY_DEPTHS= {
        'Rubin Wide': {'LSST_G': 25., 'LSST_R': 24.7, 'LSST_I': 24.0, 'LSST_Z': 23.3, 'LSST_Y': 22.1}, 
        'Roman HLWAS': {'WFI_J129': 26.7},
        'Roman HLTDS': {'WFI_J129': 26.7},
-       'Roman GBTDS': {'WFI_J129': 26.7},
-       'Euclid Wide': {'EUCLID_J': 24. },
-       'Rubin Deep': {'LSST_Z': 25.}, 
-       'Euclid Deep': {'EUCLID_J': 27. },
-       'JWST PASSAGE': {'NIRISS_F115W': 27},
-       'JWST JADES': {'NIRISS_F115W': 29},
-       'JWST CEERS':  {'NIRISS_F115W': 30},
-       'JWST NGDEEP': {'NIRISS_F115W': 30},
+       #'Roman GBTDS': {'WFI_J129': 26.7},
+       'Euclid Wide': {'EUCLID_J': 24., 'EUCLID_H': 24. },
+       'Rubin 10 year': {'LSST_G': 25.3, 'LSST_R': 25.6, 'LSST_I': 25.4, 'LSST_Z': 24.9, 'LSST_Y': 24.}, 
+       'Euclid Deep': {'EUCLID_J': 27., 'EUCLID_H': 27. },
+       #'JWST PASSAGE': {'NIRISS_F115W': 27},
+       #'JWST JADES': {'NIRISS_F115W': 29},
+       #'JWST CEERS':  {'NIRISS_F115W': 30},
+       #'JWST NGDEEP': {'NIRISS_F115W': 30},
 }
 
 #check the right pointings later
 SURVEY_FOOTPRINT= {
        'Rubin Wide': SkyCoord(*popsims.random_angles(100)*u.radian), #random
        'Roman HLWAS': SkyCoord(*popsims.random_angles(100)*u.radian), #random
-       'Roman HLTDS':SkyCoord(*popsims.random_angles(100)*u.radian), #random
-       'Roman GBTDS': SkyCoord(*popsims.random_angles(100)*u.radian), #random
+       'Roman HLTDS':SkyCoord(*random_points_above_latitute(100, 36*u.degree.to(u.radian))*u.radian), #random
+       #'Roman GBTDS': SkyCoord(*popsims.random_angles(100)*u.radian), #random
        'Euclid Wide': SkyCoord(*popsims.random_angles(100)*u.radian), #random
-       'Rubin Deep': SkyCoord(*popsims.random_angles(100)*u.radian), #random
+       'Rubin 10 year': SkyCoord(*popsims.random_angles(100)*u.radian), #random
        'Euclid Deep': SkyCoord(*popsims.random_angles(10)*u.radian), #random
-       'JWST PASSAGE': SkyCoord(*popsims.random_angles(10)*u.radian), #random
-       'JWST JADES': SkyCoord(ra=[53]*u.degree, dec=[-27.7]*u.degree), #goods-sotu
-       'JWST CEERS':  SkyCoord(*popsims.random_angles(10)*u.radian), #random
-       'JWST NGDEEP':SkyCoord(*popsims.random_angles(10)*u.radian), #random
+       #'JWST PASSAGE': SkyCoord(*popsims.random_angles(10)*u.radian), #random
+       #'JWST JADES': SkyCoord(ra=[53]*u.degree, dec=[-27.7]*u.degree), #goods-sotu
+       #'JWST CEERS':  SkyCoord(*popsims.random_angles(10)*u.radian), #random
+       #'JWST NGDEEP':SkyCoord(*popsims.random_angles(10)*u.radian), #random
 }
 
 
@@ -89,15 +95,15 @@ SURVEY_FOOTPRINT= {
 FILTERS= {
        'Rubin Wide':  ['LSST_'+x for x in 'G R I Z Y'.split()],
        'Roman HLWAS':  ['WFI_'+x for x in 'R062 Z087 Y106 J129 H158 F184 Prism Grism'.split()],
-       'Roman HLTDS':  ['WFI_'+x for x in 'R062 Z087 Y106 J129 H158 F184 Prism Grism'.split()],
-       'Roman GBTDS': ['WFI_'+x for x in 'R062 Z087 Y106 J129 H158 F184 Prism Grism'.split()],
+       #'Roman HLTDS':  ['WFI_'+x for x in 'R062 Z087 Y106 J129 H158 F184 Prism Grism'.split()],
+       #'Roman GBTDS': ['WFI_'+x for x in 'R062 Z087 Y106 J129 H158 F184 Prism Grism'.split()],
        'Euclid Wide': ['EUCLID_'+x for x in 'Y J H'.split()],
-       'Rubin Deep':  ['LSST_'+x for x in 'G R I Z Y'.split()],
+       'Rubin 10 year':  ['LSST_'+x for x in 'G R I Z Y'.split()],
        'Euclid Deep': ['EUCLID_'+x for x in 'Y J H'.split()],
-       'JWST PASSAGE':  ['NIRISS_'+x for x in 'F115W F200W F150W'.split()], #CHANGE LATER
-       'JWST JADES': ['NIRISS_'+x for x in 'F115W F200W F150W'.split()],
-       'JWST CEERS':  ['NIRISS_'+x for x in 'F115W F200W F150W'.split()],
-       'JWST NGDEEP':['NIRISS_'+x for x in 'F115W F200W F150W'.split()], #CHANGE LATER
+       #'JWST PASSAGE':  ['NIRISS_'+x for x in 'F115W F200W F150W'.split()], #CHANGE LATER
+       #'JWST JADES': ['NIRISS_'+x for x in 'F115W F200W F150W'.split()],
+       #'JWST CEERS':  ['NIRISS_'+x for x in 'F115W F200W F150W'.split()],
+       #'JWST NGDEEP':['NIRISS_'+x for x in 'F115W F200W F150W'.split()], #CHANGE LATER
 }
 
 
@@ -106,14 +112,14 @@ FILENAMES={
        'Rubin Wide': 'rubin_wide',
        'Roman HLWAS': 'roman_hlwas',
        'Roman HLTDS': 'roman_hltds',
-       'Roman GBTDS': 'roman_gbtds',
+       #'Roman GBTDS': 'roman_gbtds',
        'Euclid Wide': 'euclid_wide',
-       'Rubin Deep': 'rubin_deep',
+       'Rubin 10 year': 'rubin_10year',
        'Euclid Deep': 'euclid_deep',
-       'JWST PASSAGE': 'jwst_passage',
-       'JWST JADES': 'jwst_jades',
-       'JWST CEERS':  'jwst_ceers',
-       'JWST NGDEEP': 'jwst_ngdeep'
+       #JWST PASSAGE': 'jwst_passage',
+       #'JWST JADES': 'jwst_jades',
+       #'JWST CEERS':  'jwst_ceers',
+       #'JWST NGDEEP': 'jwst_ngdeep'
 }
 
 
@@ -127,21 +133,28 @@ def get_maximum_distances(spt, kind, maglimits):
     return np.nanmax(dmaxs)
 
 def get_volume(footprint, dmax, gmodel):
-    vol=0.
+    vol={}
+    #save volumes now as hash because it takes a few more seconds to compute
     for s in  footprint:
         l=s.galactic.l.radian
         b=s.galactic.b.radian
-        vol += gmodel.volume(l, b, 0.1, dmax)
+        k= hash((round(s.galactic.l.to(u.degree).value, 1), round(s.galactic.b.to(u.degree).value, 1)))
+        vol[k]= gmodel.volume(l, b, 0.1, dmax)
     return vol
+
+def get_pointing(lb):
+    #use hash key to get l and b coordinates of pointing
+    l, b=lb*u.radian
+    return hash((round(l.to(u.degree).value, 1), round(b.to(u.degree).value, 1)))
 
 def simulate_survey(keys, maglimit, footprint, filename):
 
-    nsample=1e4
+    nsample=1e3
     sptgrid=np.arange(14, 40)
     dminss=0.1*np.ones_like(sptgrid)
-    dmaxss=1.5*np.array([get_maximum_distances(x, 'dwarfs', maglimit) for x  in sptgrid])
-    dmaxss_sd=1.5*np.array([get_maximum_distances(x, 'subdwarfs', maglimit) for x in sptgrid])
-    dmaxss_esd=1.5*np.array([get_maximum_distances(x,'esd', maglimit) for x in sptgrid])
+    dmaxss=1.2*np.array([get_maximum_distances(x, 'dwarfs', maglimit) for x  in sptgrid])
+    dmaxss_sd=1.2*np.array([get_maximum_distances(x, 'subdwarfs', maglimit) for x in sptgrid])
+    dmaxss_esd=1.2*np.array([get_maximum_distances(x,'esd', maglimit) for x in sptgrid])
 
     drange=dict(zip(sptgrid,np.vstack([dminss, dmaxss]).T ))
 
@@ -214,20 +227,20 @@ def simulate_survey(keys, maglimit, footprint, filename):
 
     df3=p3.to_dataframe(cols)
     df3['population']='halo'
-    df1['FeH']=-1.5
+    df3['FeH']=-1.5
 
     df=pd.concat([df1, df2, df3]).reset_index(drop=True)
+    df['pointing']= df[['l', 'b']].apply(get_pointing, axis=1)
 
     #print (df1.columns)
     #print (df2.columns)
     #print (df3.columns)
 
-    df=df[np.logical_and.reduce([df[k] <  maglimit[k] for k in maglimit.keys() ])].reset_index(drop=True)
-
     thind_vols=[get_volume(footprint, x , Disk(H=300, L=2600)) for x in dmaxss]
     thickd_vols=[get_volume(footprint, x , Disk(H=900, L=3600)) for x in dmaxss]
     halo_vols=[get_volume(footprint, x , Halo()) for x in dmaxss]
                  
+    #selection function by pointing!!!
     res={'data': df,
          'nsample': nsample,
          'volume': {'thin_disk':  thind_vols, 'thick_disk': thickd_vols, 'halo': halo_vols }, #note that solid angle not considered here
