@@ -36,8 +36,8 @@ print (POL['absmags_spt']['esd'].keys())
 #roman's metal poor models
 df_roman=pd.read_csv('/users/caganze/research/roman_new_isochrones.csv').rename(columns={'teff': 'temperature', 
                                  'lum': 'luminosity'})
-METAL_POOR_EVOL= popsims.EvolutionaryModel(df_roman)
 
+df_roman['age']=df_roman['age']/1e9 #put it in Gyr
 METAL_POOR_EVOL= popsims.EvolutionaryModel(df_roman)
 
 

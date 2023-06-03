@@ -141,7 +141,8 @@ def get_maximum_distances(spt, kind, maglimits):
             mag_cut= maglimits[k]
             absmag= np.poly1d(POL['absmags_spt'][kind][k]['fit'])(spt)
             dmaxs.append(10.**(-(absmag-mag_cut)/5. + 1.))
-    return np.nanmax(dmaxs)
+    #return np.nanmax(dmaxs) --> change this back
+    return np.nanmedian(dmaxs)
 
 def get_volume(footprint, dmax, gmodel):
     vol={}
@@ -160,7 +161,7 @@ def get_pointing(lb):
 
 def simulate_survey(keys, maglimit, footprint, filename, Hthin=300, haloIMF=-0.6):
 
-    nsample=1e5
+    nsample=1e6
     sptgrid=np.arange(14, 40)
     dminss=np.ones_like(sptgrid)
     dmaxss=np.array([get_maximum_distances(x, 'dwarfs', maglimit) for x  in sptgrid])
