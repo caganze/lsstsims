@@ -36,8 +36,10 @@ print (POL['absmags_spt']['esd'].keys())
 #roman's metal poor models
 df_roman=pd.read_csv('/users/caganze/research/roman_new_isochrones.csv').rename(columns={'teff': 'temperature', 
                                  'lum': 'luminosity'})
+METAL_POOR_EVOL= popsims.EvolutionaryModel(df_roman)
 
 METAL_POOR_EVOL= popsims.EvolutionaryModel(df_roman)
+
 
 SDSS={'FOV': 2.5*u.degree*2.5*u.degree,\
       'l':((np.array([0, 360]))*u.degree.to(u.radian)),\

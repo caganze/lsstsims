@@ -36,8 +36,9 @@ print (POL['absmags_spt']['esd'].keys())
 #survey filters
 df_roman=pd.read_csv('/users/caganze/research/roman_new_isochrones.csv').rename(columns={'teff': 'temperature', 
                                  'lum': 'luminosity'})
-
+df_roman['age']=df_roman['age']/1e9 #put it in Gyr
 METAL_POOR_EVOL= popsims.EvolutionaryModel(df_roman)
+
 
 def random_points_above_latitute(n, bmin):
     l, b=popsims.random_angles(10*n)
@@ -85,12 +86,12 @@ SURVEY_DEPTHS= {
 
 #check the right pointings later
 SURVEY_FOOTPRINT= {
-       'Rubin Wide': random_points_south_dec(100, 0),
+       'Rubin Wide': random_points_south_dec(10, 0),
        'Roman HLWAS':random_points_above_latitute(100, 20*u.degree.to(u.radian)),
        'Roman HLTDS':random_points_above_latitute(100, 20*u.degree.to(u.radian)), #random
        #'Roman GBTDS': SkyCoord(*popsims.random_angles(100)*u.radian), #random
        'Euclid Wide': random_points_above_latitute(100, 20*u.degree.to(u.radian)),
-       'Rubin 10 year': random_points_south_dec(100, 0),
+       'Rubin 10 year': random_points_south_dec(10, 0),
        'Euclid Deep': SkyCoord(ra=[189.22]*u.degree, dec=[62.2375]*u.degree), #GOODS-NORTH (189.22, 62.2375
        #'JWST PASSAGE': SkyCoord(*popsims.random_angles(10)*u.radian), #random
        #'JWST JADES': SkyCoord(ra=[53]*u.degree, dec=[-27.7]*u.degree), #goods-sotu
@@ -149,7 +150,7 @@ def get_volume(footprint, dmax, gmodel):
         l=s.galactic.l.radian
         b=s.galactic.b.radian
         k= hash((round(s.galactic.l.to(u.degree).value, 1), round(s.galactic.b.to(u.degree).value, 1)))
-        vol[k]= gmodel.volume(l, b, 0.1, dmax)
+        vol[k]= gmodel.volume(l, b, 1, dmax)
     return vol
 
 def get_pointing(lb):
@@ -159,18 +160,18 @@ def get_pointing(lb):
 
 def simulate_survey(keys, maglimit, footprint, filename, Hthin=300, haloIMF=-0.6):
 
-    nsample=1e7
+    nsample=1e5
     sptgrid=np.arange(14, 40)
-    dminss=0.1*np.ones_like(sptgrid)
-    dmaxss=1.2*np.array([get_maximum_distances(x, 'dwarfs', maglimit) for x  in sptgrid])
-    dmaxss_sd=1.2*np.array([get_maximum_distances(x, 'subdwarfs', maglimit) for x in sptgrid])
-    dmaxss_esd=1.2*np.array([get_maximum_distances(x,'esd', maglimit) for x in sptgrid])
+    dminss=np.ones_like(sptgrid)
+    dmaxss=np.array([get_maximum_distances(x, 'dwarfs', maglimit) for x  in sptgrid])
+    dmaxss_sd=np.array([get_maximum_distances(x, 'subdwarfs', maglimit) for x in sptgrid])
+    dmaxss_esd=np.array([get_maximum_distances(x,'esd', maglimit) for x in sptgrid])
 
     drange=dict(zip(sptgrid,np.vstack([dminss, dmaxss]).T ))
     drange_sd=dict(zip(sptgrid,np.vstack([dminss, dmaxss_sd]).T ))
-    #drange_esd=dict(zip(sptgrid,np.vstack([dminss, dmaxss_esd]).T ))
+    drange_esd=dict(zip(sptgrid,np.vstack([dminss, dmaxss_esd]).T ))
 
-    p1=Population(evolmodel= 'burrows1997',
+    p1=Population(evolmodel= 'marley2019',
                   imf_power=-0.6,
                   binary_fraction=0.2,
                   age_range=[0, 8],
@@ -214,7 +215,7 @@ def simulate_survey(keys, maglimit, footprint, filename, Hthin=300, haloIMF=-0.6
     p3.simulate()
 
    
-    p3.assign_distance_from_spt_ranges(Halo(), footprint.galactic.l.radian, footprint.galactic.b.radian, drange_sd)
+    p3.assign_distance_from_spt_ranges(Halo(), footprint.galactic.l.radian, footprint.galactic.b.radian, drange_esd)
 
     #add magnitudes from pre-defined filters or pre-define polynomial cofficients
     p3.add_magnitudes(keys, get_from='spt',object_type='esd', pol=POL['absmags_spt']['esd'])
@@ -249,8 +250,8 @@ def simulate_survey(keys, maglimit, footprint, filename, Hthin=300, haloIMF=-0.6
     #print (df3.columns)
 
     thind_vols=[get_volume(footprint, x , Disk(H=300, L=2600)) for x in dmaxss]
-    thickd_vols=[get_volume(footprint, x , Disk(H=900, L=3600)) for x in dmaxss]
-    halo_vols=[get_volume(footprint, x , Halo()) for x in dmaxss]
+    thickd_vols=[get_volume(footprint, x , Disk(H=900, L=3600)) for x in dmaxss_sd]
+    halo_vols=[get_volume(footprint, x , Halo()) for x in dmaxss_esd]
 
     #selection function by pointing!!!
     res={'data': df,
@@ -261,6 +262,7 @@ def simulate_survey(keys, maglimit, footprint, filename, Hthin=300, haloIMF=-0.6
          'sptgrid': sptgrid,
          'Hthin': Hthin, 
          'haloIMF':haloIMF,
+         'dmaxs': [dmaxss, dmaxss_sd, dmaxss_esd],
     }
     #add an option to add data until we reach desired nsample (after cuts)
     np.save('../simulations{}.npy'.format(filename), res, allow_pickle=True) 
